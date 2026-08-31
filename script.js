@@ -10,9 +10,9 @@ const GROUP_COLORS = ['var(--g0)', 'var(--g1)', 'var(--g2)'];
 let settings = {
   channel: '',
   groups: [
-    { command: '!frogs', images: [], popAnimation: '', popAnimationDuration: 600 },
-    { command: '!ghosts', images: [], popAnimation: '', popAnimationDuration: 600 },
-    { command: '!coins', images: [], popAnimation: '', popAnimationDuration: 600 }
+    { command: '!frogs', images: [], popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 },
+    { command: '!ghosts', images: [], popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 },
+    { command: '!coins', images: [], popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 }
   ],
   minInterval: 5,
   maxInterval: 15,
@@ -62,6 +62,8 @@ function applySettingsToForm(){
     document.getElementById('g' + i + 'Images').value = settings.groups[i].images.join('\n');
     document.getElementById('g' + i + 'PopFx').value = settings.groups[i].popAnimation || '';
     document.getElementById('g' + i + 'PopFxDuration').value = settings.groups[i].popAnimationDuration || 600;
+    document.getElementById('g' + i + 'PopSound').value = settings.groups[i].popSound || '';
+    document.getElementById('g' + i + 'PopSoundVolume').value = settings.groups[i].popSoundVolume != null ? settings.groups[i].popSoundVolume : 100;
   }
   document.getElementById('minInterval').value = settings.minInterval;
   document.getElementById('maxInterval').value = settings.maxInterval;
@@ -82,7 +84,12 @@ function readSettingsFromForm(){
     command: (document.getElementById('g' + i + 'Command').value.trim() || ('!group' + (i + 1))),
     images: document.getElementById('g' + i + 'Images').value.split('\n').map(s => s.trim()).filter(Boolean),
     popAnimation: document.getElementById('g' + i + 'PopFx').value.trim(),
-    popAnimationDuration: Math.min(5000, Math.max(100, parseInt(document.getElementById('g' + i + 'PopFxDuration').value) || 600))
+    popAnimationDuration: Math.min(5000, Math.max(100, parseInt(document.getElementById('g' + i + 'PopFxDuration').value) || 600)),
+    popSound: document.getElementById('g' + i + 'PopSound').value.trim(),
+    popSoundVolume: (() => {
+      const v = parseInt(document.getElementById('g' + i + 'PopSoundVolume').value);
+      return isNaN(v) ? 100 : Math.min(100, Math.max(0, v));
+    })()
   }));
   settings.minInterval = Math.max(1, parseFloat(document.getElementById('minInterval').value) || 5);
   settings.maxInterval = Math.max(settings.minInterval, parseFloat(document.getElementById('maxInterval').value) || 15);
@@ -128,9 +135,9 @@ async function loadSettings(){
           settings.groups && settings.groups[2] ? settings.groups[2] : { command: '!coins', images: [] }
         ];
       }
-      // Backfill popAnimation fields for settings saved before this feature existed
+      // Backfill popAnimation/popSound fields for settings saved before these features existed
       settings.groups = settings.groups.map(g => Object.assign({
-        popAnimation: '', popAnimationDuration: 600
+        popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100
       }, g));
     }
   }catch(e){
@@ -220,6 +227,18 @@ function imageIdFromUrl(url){
   }catch(e){ return url; }
 }
 
+// Plays a short sound effect. Each call uses a fresh Audio instance so overlapping
+// pops (e.g. two people popping the same group quickly) don't cut each other off.
+function playPopSound(url, volumePercent){
+  try{
+    const audio = new Audio(url);
+    audio.volume = Math.min(100, Math.max(0, volumePercent != null ? volumePercent : 100)) / 100;
+    audio.play().catch(e => console.warn('Pop sound failed to play:', e));
+  }catch(e){
+    console.warn('Pop sound error:', e);
+  }
+}
+
 function burstAt(x, y, color){
   const burst = document.createElement('div');
   burst.className = 'burst';
@@ -243,6 +262,10 @@ function playPopFx(target){
   const group = settings.groups[target.groupIndex];
   const cx = target.x + target.size / 2;
   const cy = target.y + target.size / 2;
+
+  if (group && group.popSound){
+    playPopSound(group.popSound, group.popSoundVolume);
+  }
 
   if (group && group.popAnimation){
     const fx = document.createElement('img');
@@ -409,7 +432,7 @@ function disconnectStreamerbot(){
   setSbStatus('Not connected');
 }
 
-// Sends a DoAction request to Streamer.bot with details of who popped which image.
+// Sends a DoAction request to Streamer.bot with details of user X popping image Y
 function reportPopToStreamerbot(target, popper){
   if (!settings.streamerbot.enabled) return;
   if (!sbWs || sbWs.readyState !== WebSocket.OPEN) return;
@@ -463,7 +486,7 @@ document.getElementById('testSpawn0').addEventListener('click', () => { readSett
 document.getElementById('testSpawn1').addEventListener('click', () => { readSettingsFromForm(); trySpawn(1); });
 document.getElementById('testSpawn2').addEventListener('click', () => { readSettingsFromForm(); trySpawn(2); });
 
-// Init 
+// Init
 
 (async function init(){
   await loadSettings();
