@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Twitch Pop Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="stage"></div>
+<div class="hint" id="hint" style="display:none"></div>
+
+<button id="gear" title="Settings (S)">⚙</button>
+
+<div id="panel">
+  <h1><span class="dot">●</span> Pop Overlay Settings</h1>
+  <p class="sub">Configure once, then use this page (with the panel closed) as your OBS Browser Source.</p>
+
+  <div class="status" id="status"><span class="led"></span><span id="statusText">Not connected</span></div>
+
+  <label>Twitch Channel</label>
+  <input type="text" id="channel" placeholder="e.g. shroud">
+
+  <div class="group" style="--g:var(--g0)">
+    <div class="grouptitle"><span class="swatch"></span>Group 1</div>
+    <label>Pop command</label>
+    <input type="text" id="g0Command" placeholder="!frogs">
+    <label>Image or GIF URLs (one per line, up to 5)</label>
+    <textarea id="g0Images" placeholder="https://example.com/frog1.gif"></textarea>
+    <label>Pop animation GIF (optional)</label>
+    <input type="text" id="g0PopFx" placeholder="https://example.com/frog-pop.gif">
+    <label>Pop animation duration (ms)</label>
+    <input type="number" id="g0PopFxDuration" min="100" max="5000" value="600">
+  </div>
+
+  <div class="group" style="--g:var(--g1)">
+    <div class="grouptitle"><span class="swatch"></span>Group 2</div>
+    <label>Pop command</label>
+    <input type="text" id="g1Command" placeholder="!ghosts">
+    <label>Image or GIF URLs (one per line, up to 5)</label>
+    <textarea id="g1Images" placeholder="https://example.com/ghost1.gif"></textarea>
+    <label>Pop animation GIF (optional)</label>
+    <input type="text" id="g1PopFx" placeholder="https://example.com/ghost-pop.gif">
+    <label>Pop animation duration (ms)</label>
+    <input type="number" id="g1PopFxDuration" min="100" max="5000" value="600">
+  </div>
+
+  <div class="group" style="--g:var(--g2)">
+    <div class="grouptitle"><span class="swatch"></span>Group 3</div>
+    <label>Pop command</label>
+    <input type="text" id="g2Command" placeholder="!coins">
+    <label>Image or GIF URLs (one per line, up to 5)</label>
+    <textarea id="g2Images" placeholder="https://example.com/coin1.gif"></textarea>
+    <label>Pop animation GIF (optional)</label>
+    <input type="text" id="g2PopFx" placeholder="https://example.com/coin-pop.gif">
+    <label>Pop animation duration (ms)</label>
+    <input type="number" id="g2PopFxDuration" min="100" max="5000" value="600">
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Min interval (s)</label>
+      <input type="number" id="minInterval" min="1" value="5">
+    </div>
+    <div>
+      <label>Max interval (s)</label>
+      <input type="number" id="maxInterval" min="1" value="15">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Image size (px)</label>
+      <input type="number" id="size" min="16" max="400" value="80">
+    </div>
+    <div>
+      <label>Max on screen</label>
+      <input type="number" id="maxImages" min="1" max="40" value="6">
+    </div>
+  </div>
+
+  <label>Pop order (within a group)</label>
+  <select id="removalOrder">
+    <option value="oldest">Oldest first</option>
+    <option value="random">Random</option>
+  </select>
+
+  <div class="checkline">
+    <input type="checkbox" id="showHint" checked>
+    <label for="showHint">Show command hint on screen</label>
+  </div>
+
+  <div class="group" style="--g:#5eead4">
+    <div class="grouptitle"><span class="swatch"></span>Streamer.bot Integration</div>
+    <div class="checkline" style="margin-top:0">
+      <input type="checkbox" id="sbEnabled">
+      <label for="sbEnabled">Report pops to Streamer.bot</label>
+    </div>
+    <div class="row">
+      <div>
+        <label>WS Host</label>
+        <input type="text" id="sbHost" placeholder="127.0.0.1">
+      </div>
+      <div>
+        <label>WS Port</label>
+        <input type="number" id="sbPort" placeholder="8080">
+      </div>
+    </div>
+    <label>Action name to trigger</label>
+    <input type="text" id="sbAction" placeholder="ImagePop">
+    <div class="hint-small" id="sbStatus">Not connected</div>
+  </div>
+
+  <div class="btnrow">
+    <button class="action" id="saveConnect">Save &amp; Connect</button>
+    <button class="action ghost" id="disconnect">Disconnect</button>
+  </div>
+  <div class="btnrow">
+    <button class="action ghost small" id="testSpawn0" style="border-left:3px solid var(--g0)">Test G1</button>
+    <button class="action ghost small" id="testSpawn1" style="border-left:3px solid var(--g1)">Test G2</button>
+    <button class="action ghost small" id="testSpawn2" style="border-left:3px solid var(--g2)">Test G3</button>
+  </div>
+  <div class="hint-small">Press <b>S</b> anytime to show/hide this panel. It never appears to your stream when closed.</div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
