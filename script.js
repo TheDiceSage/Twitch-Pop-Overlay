@@ -110,9 +110,7 @@ async function loadSettings(){
     const result = await window.storage.get(STORAGE_KEY, false);
     if (result && result.value){
       const loaded = JSON.parse(result.value);
-      
       // Migrate old single-group format if present
-
       if (loaded.images && loaded.popCommand && !loaded.groups){
         loaded.groups = [
           { command: loaded.popCommand, images: loaded.images },
@@ -130,20 +128,18 @@ async function loadSettings(){
           settings.groups && settings.groups[2] ? settings.groups[2] : { command: '!coins', images: [] }
         ];
       }
-      // Backfill popAnimation fields
-
+      // Backfill popAnimation fields for settings saved before this feature existed
       settings.groups = settings.groups.map(g => Object.assign({
         popAnimation: '', popAnimationDuration: 600
       }, g));
     }
   }catch(e){
-
-    // no saved settings yet
+    // no saved settings yet, that's fine
   }
   applySettingsToForm();
 }
 
-// Spawns
+// Spawning
 
 function scheduleSpawn(){
   clearTimeout(spawnTimer);
@@ -169,7 +165,8 @@ function trySpawn(forcedGroupIndex){
   const group = settings.groups[groupIndex];
   if (!group || !group.images.length) return;
 
-  const url = group.images[Math.floor(Math.random() * group.images.length)];
+  const parsedImages = group.images.map(parseImageLine);
+  const url = pickWeighted(parsedImages).url;
   const size = settings.size;
   const maxX = Math.max(0, window.innerWidth - size);
   const bottomMargin = 8; // gap between image bottom and viewport edge
@@ -190,8 +187,31 @@ function trySpawn(forcedGroupIndex){
   activeImages.push({ id, el: img, x, y, size, groupIndex, imageId: imageIdFromUrl(url) });
 }
 
-// Gets stable, readable id from image URL, e.g. ".../assets/frog1.png" -> "frog1"
+// Parses an image line, which may optionally end in "|weight" to control spawn rarity.
+// Weight defaults to 1 when omitted. Lower weight = spawns less often relative to others.
+// e.g. "https://x.com/rare.gif|0.2" spawns 5x less often than a default-weight (1) image.
+function parseImageLine(line){
+  const pipeIdx = line.lastIndexOf('|');
+  if (pipeIdx === -1) return { url: line.trim(), weight: 1 };
+  const url = line.slice(0, pipeIdx).trim();
+  const weightStr = line.slice(pipeIdx + 1).trim();
+  const weight = parseFloat(weightStr);
+  return { url, weight: (!isNaN(weight) && weight > 0) ? weight : 1 };
+}
 
+// Weighted random pick from an array of { url, weight } entries.
+function pickWeighted(entries){
+  const total = entries.reduce((sum, e) => sum + e.weight, 0);
+  if (total <= 0) return entries[Math.floor(Math.random() * entries.length)];
+  let r = Math.random() * total;
+  for (const e of entries){
+    if (r < e.weight) return e;
+    r -= e.weight;
+  }
+  return entries[entries.length - 1];
+}
+
+// Derives a stable, readable id from an image URL, e.g. ".../assets/frog1.png" -> "frog1"
 function imageIdFromUrl(url){
   try{
     const clean = url.split('?')[0].split('#')[0];
@@ -218,8 +238,7 @@ function burstAt(x, y, color){
   setTimeout(() => burst.remove(), 550);
 }
 
-// plays pop effect with default burst, update with custom gif and duration if needed
-
+// Plays the pop effect for a given target: a group's custom GIF if set, otherwise the default particle burst.
 function playPopFx(target){
   const group = settings.groups[target.groupIndex];
   const cx = target.x + target.size / 2;
@@ -269,7 +288,7 @@ function popOne(groupIndex, popper){
   }
 }
 
-// Twitch Chat
+// Twitch chat (anonymous IRC over WebSocket)
 
 function handleChatMessage(text, popper){
   const trimmed = text.trim().toLowerCase();
@@ -279,8 +298,7 @@ function handleChatMessage(text, popper){
   }
 }
 
-// Splits the raw IRC line into tags and the rest of the line
-
+// Splits a raw IRC line into its IRCv3 tags (if present) and the rest of the line.
 function parseIrcTags(line){
   if (!line.startsWith('@')) return { tags: {}, rest: line };
   const spaceIdx = line.indexOf(' ');
@@ -360,7 +378,7 @@ function disconnectTwitch(){
   setStatus('', 'Not connected');
 }
 
-// Streamer.bot Websocket client
+// Streamer.bot WebSocket client
 
 const sbStatusEl = document.getElementById('sbStatus');
 
@@ -409,7 +427,7 @@ function reportPopToStreamerbot(target, popper){
   }));
 }
 
-// Panel Toggle
+// Panel toggling
 
 function togglePanel(force){
   const open = typeof force === 'boolean' ? force : !panel.classList.contains('open');
@@ -445,7 +463,7 @@ document.getElementById('testSpawn0').addEventListener('click', () => { readSett
 document.getElementById('testSpawn1').addEventListener('click', () => { readSettingsFromForm(); trySpawn(1); });
 document.getElementById('testSpawn2').addEventListener('click', () => { readSettingsFromForm(); trySpawn(2); });
 
-// Init
+// Init 
 
 (async function init(){
   await loadSettings();
