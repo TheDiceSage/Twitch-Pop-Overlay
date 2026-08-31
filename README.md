@@ -1,5 +1,5 @@
-# Twitch Pop Overlay
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/thedicesage)
+# Twitch Pop Overlay [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/thedicesage)
+
 
 An OBS browser source overlay that connects to a Twitch channel's chat, spawns small images/GIFs along the bottom of the screen, and pops them when chat types a matching command.
 
