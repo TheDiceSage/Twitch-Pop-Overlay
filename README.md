@@ -24,9 +24,10 @@ Open the settings panel (press **S**) and fill in:
 
 - **Twitch Channel** - the channel whose chat it should listen to (e.g. `thedicesage` if it was my channel).
 - **Group 1 / 2 / 3** - each group has:
-  - A **pop command** (e.g. `!pop`) - this is what chat types to pop one of that group's images.
-  - Up to 5 image or GIF URLs — direct links to hosted images. To make a specific image spawn less (or more) often, add |weight after its URL, e.g. "https://example.com/rare.gif|0.2". Weight defaults to 1 if omitted; a 0.2 weight spawns 5x less often than a default image, while a 3 would spawn 3x more often.
-  - An optional **pop animation GIF** - plays where the image was when it's popped. Leave blank to use the default particle-burst effect. Set the duration (ms) to roughly match the GIF's real length.
+  - The **pop command** (e.g. `!pop`) is what chat types to pop one of that group's images.
+  - Up to 5 image or GIF URLs using direct links to hosted images. To make a specific image spawn less (or more) often, add |weight after its URL, e.g. "https://example.com/rare.gif|0.2". Weight defaults to 1 if omitted; a 0.2 weight spawns 5x less often than a default image, while a 3 would spawn 3x more often.
+  - An optional **pop animation GIF** that plays where the image was when it's popped. Leave blank to use the default particle-burst effect. Set the duration (ms) to roughly match the GIF's real length.
+  - An optional **pop sound effect** (direct link to an MP3/WAV/OGG) with its own volume that plays whenever chat pops an image from that group.
 - **Min/max interval** - how often (in seconds) a new image spawns.
 - **Image size** - display size in pixels with a 1:1 ratio.
 - **Max on screen** - limits how many images can be up at once.
