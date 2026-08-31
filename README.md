@@ -7,7 +7,7 @@ An OBS browser source overlay that connects to a Twitch channel's chat, spawns s
 
 You need all three of these **in the same folder**:
 
-- `twitch-pop-overlay.html`
+- `index.html`
 - `style.css`
 - `script.js`
 
