@@ -24,54 +24,8 @@
   <label>Twitch Channel</label>
   <input type="text" id="channel" placeholder="e.g. shroud">
 
-  <div class="group" style="--g:var(--g0)">
-    <div class="grouptitle"><span class="swatch"></span>Group 1</div>
-    <label>Pop command</label>
-    <input type="text" id="g0Command" placeholder="!frogs">
-    <label>Image or GIF URLs (one per line, up to 5)</label>
-    <textarea id="g0Images" placeholder="https://example.com/frog1.gif&#10;https://example.com/rare-frog.gif|0.2"></textarea>
-    <div class="hint-small">Add <b>|weight</b> after a URL to change how often it spawns (default 1). Lower = rarer, e.g. <b>|0.2</b> spawns 5x less than default.</div>
-    <label>Pop animation GIF (optional)</label>
-    <input type="text" id="g0PopFx" placeholder="https://example.com/frog-pop.gif">
-    <label>Pop animation duration (ms)</label>
-    <input type="number" id="g0PopFxDuration" min="100" max="5000" value="600">
-    <label>Pop sound effect (optional)</label>
-    <input type="text" id="g0PopSound" placeholder="https://example.com/frog-pop.mp3">
-    <label>Sound volume (%)</label>
-    <input type="number" id="g0PopSoundVolume" min="0" max="100" value="100">
-  </div>
-
-  <div class="group" style="--g:var(--g1)">
-    <div class="grouptitle"><span class="swatch"></span>Group 2</div>
-    <label>Pop command</label>
-    <input type="text" id="g1Command" placeholder="!ghosts">
-    <label>Image or GIF URLs (one per line, up to 5)</label>
-    <textarea id="g1Images" placeholder="https://example.com/ghost1.gif&#10;https://example.com/rare-ghost.gif|0.2"></textarea>
-    <label>Pop animation GIF (optional)</label>
-    <input type="text" id="g1PopFx" placeholder="https://example.com/ghost-pop.gif">
-    <label>Pop animation duration (ms)</label>
-    <input type="number" id="g1PopFxDuration" min="100" max="5000" value="600">
-    <label>Pop sound effect (optional)</label>
-    <input type="text" id="g1PopSound" placeholder="https://example.com/ghost-pop.mp3">
-    <label>Sound volume (%)</label>
-    <input type="number" id="g1PopSoundVolume" min="0" max="100" value="100">
-  </div>
-
-  <div class="group" style="--g:var(--g2)">
-    <div class="grouptitle"><span class="swatch"></span>Group 3</div>
-    <label>Pop command</label>
-    <input type="text" id="g2Command" placeholder="!coins">
-    <label>Image or GIF URLs (one per line, up to 5)</label>
-    <textarea id="g2Images" placeholder="https://example.com/coin1.gif&#10;https://example.com/rare-coin.gif|0.2"></textarea>
-    <label>Pop animation GIF (optional)</label>
-    <input type="text" id="g2PopFx" placeholder="https://example.com/coin-pop.gif">
-    <label>Pop animation duration (ms)</label>
-    <input type="number" id="g2PopFxDuration" min="100" max="5000" value="600">
-    <label>Pop sound effect (optional)</label>
-    <input type="text" id="g2PopSound" placeholder="https://example.com/coin-pop.mp3">
-    <label>Sound volume (%)</label>
-    <input type="number" id="g2PopSoundVolume" min="0" max="100" value="100">
-  </div>
+  <div id="groupsContainer"></div>
+  <button type="button" class="addbtn addgroupbtn" id="addGroupBtn">+ Add Group</button>
 
   <div class="row">
     <div>
@@ -131,12 +85,7 @@
     <button class="action" id="saveConnect">Save &amp; Connect</button>
     <button class="action ghost" id="disconnect">Disconnect</button>
   </div>
-  <div class="btnrow">
-    <button class="action ghost small" id="testSpawn0" style="border-left:3px solid var(--g0)">Test G1</button>
-    <button class="action ghost small" id="testSpawn1" style="border-left:3px solid var(--g1)">Test G2</button>
-    <button class="action ghost small" id="testSpawn2" style="border-left:3px solid var(--g2)">Test G3</button>
-  </div>
-  <div class="hint-small">Press <b>S</b> anytime to show/hide this panel. It never appears to your stream when closed.</div>
+  <div class="hint-small">Press <b>S</b> anytime to show/hide this panel. It never appears to your stream when closed. Each group has its own Test Spawn / Test Pop buttons.</div>
 </div>
 
 <script src="script.js"></script>

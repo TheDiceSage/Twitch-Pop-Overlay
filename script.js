@@ -5,15 +5,26 @@ const gear = document.getElementById('gear');
 const statusEl = document.getElementById('status');
 const statusText = document.getElementById('statusText');
 const hintEl = document.getElementById('hint');
-const GROUP_COLORS = ['var(--g0)', 'var(--g1)', 'var(--g2)'];
+const groupsContainer = document.getElementById('groupsContainer');
+
+// Colors cycle through this palette as groups are added, staying within the blue/grey scheme.
+const GROUP_COLORS = ['#89CFF0', '#9aa0aa', '#5b7c8f', '#c7d9e8', '#71797E', '#4f7a96'];
+
+function newGroup(){
+  return {
+    id: crypto.randomUUID(),
+    command: '',
+    images: [''],
+    popAnimation: '',
+    popAnimationDuration: 600,
+    popSound: '',
+    popSoundVolume: 100
+  };
+}
 
 let settings = {
   channel: '',
-  groups: [
-    { command: '!frogs', images: [], popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 },
-    { command: '!ghosts', images: [], popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 },
-    { command: '!coins', images: [], popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 }
-  ],
+  groups: [newGroup()],
   minInterval: 5,
   maxInterval: 15,
   size: 80,
@@ -28,7 +39,7 @@ let settings = {
   }
 };
 
-let activeImages = []; // { id, el, x, y, size, groupIndex, imageId }
+let activeImages = []; // { id, el, x, y, size, groupId, imageId }
 let ws = null;
 let spawnTimer = null;
 let reconnectTimer = null;
@@ -42,11 +53,19 @@ function setStatus(state, label){
   statusText.textContent = label;
 }
 
+function groupColor(gi){
+  return GROUP_COLORS[gi % GROUP_COLORS.length];
+}
+
+function escapeAttr(s){
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
 function updateHintDisplay(){
   const parts = settings.groups
     .map((g, i) => ({ g, i }))
-    .filter(({g}) => g.images.length && g.command)
-    .map(({g, i}) => '<span class="cmd" style="color:' + GROUP_COLORS[i] + '">' + g.command + '</span>');
+    .filter(({ g }) => g.command && g.images.some(l => l.trim()))
+    .map(({ g, i }) => '<span class="cmd" style="color:' + groupColor(i) + '">' + g.command + '</span>');
   if (parts.length && settings.showHint){
     hintEl.innerHTML = 'Type ' + parts.join('<span class="sep">/</span>') + ' to pop!';
     hintEl.style.display = 'block';
@@ -55,16 +74,120 @@ function updateHintDisplay(){
   }
 }
 
+// ---------- Dynamic group rendering ----------
+
+function groupTemplate(group, gi){
+  const color = groupColor(gi);
+  const canRemoveGroup = settings.groups.length > 1;
+  const imagesHtml = group.images.map((url, ii) => `
+    <div class="imgline">
+      <input type="text" class="imgInput" data-g="${group.id}" data-i="${ii}" value="${escapeAttr(url)}" placeholder="${ii === 0 ? 'https://example.com/image1.gif' : 'https://example.com/rare.gif|0.2'}">
+      ${group.images.length > 1 ? `<button type="button" class="iconbtn removeImg" data-g="${group.id}" data-i="${ii}" title="Remove line">&times;</button>` : ''}
+    </div>
+  `).join('');
+
+  return `
+  <div class="group" style="--g:${color}" data-g="${group.id}">
+    <div class="grouptitle">
+      <span class="swatch"></span><span>Group ${gi + 1}</span>
+      ${canRemoveGroup ? `<button type="button" class="iconbtn removeGroup" data-g="${group.id}" title="Remove group">&times;</button>` : ''}
+    </div>
+    <label>Pop command</label>
+    <input type="text" class="cmdInput" data-g="${group.id}" value="${escapeAttr(group.command)}" placeholder="!group${gi + 1}">
+    <label>Image or GIF URLs</label>
+    <div class="imagelines">${imagesHtml}</div>
+    <button type="button" class="addbtn addImg" data-g="${group.id}">+ Add image source</button>
+    <div class="hint-small">Add <b>|weight</b> after a URL to change how often it spawns (default 1). Lower = rarer, e.g. <b>|0.2</b> spawns 5x less than default.</div>
+    <label>Pop animation GIF (optional)</label>
+    <input type="text" class="fxInput" data-g="${group.id}" value="${escapeAttr(group.popAnimation)}" placeholder="https://example.com/pop.gif">
+    <label>Pop animation duration (ms)</label>
+    <input type="number" class="fxDurationInput" data-g="${group.id}" min="100" max="5000" value="${group.popAnimationDuration}">
+    <label>Pop sound effect (optional)</label>
+    <input type="text" class="soundInput" data-g="${group.id}" value="${escapeAttr(group.popSound)}" placeholder="https://example.com/pop.mp3">
+    <label>Sound volume (%)</label>
+    <input type="number" class="soundVolInput" data-g="${group.id}" min="0" max="100" value="${group.popSoundVolume}">
+    <div class="grouptestrow">
+      <button type="button" class="action ghost small testSpawnBtn" data-g="${group.id}">Test Spawn</button>
+      <button type="button" class="action ghost small testPopBtn" data-g="${group.id}">Test Pop</button>
+    </div>
+  </div>`;
+}
+
+function findGroup(groupId){
+  return settings.groups.find(g => g.id === groupId);
+}
+
+function renderGroups(){
+  groupsContainer.innerHTML = settings.groups.map((g, gi) => groupTemplate(g, gi)).join('');
+  hookGroupInputs();
+  updateHintDisplay();
+}
+
+function hookGroupInputs(){
+  groupsContainer.querySelectorAll('.cmdInput').forEach(el => {
+    el.addEventListener('input', () => {
+      findGroup(el.dataset.g).command = el.value;
+      updateHintDisplay();
+    });
+  });
+  groupsContainer.querySelectorAll('.imgInput').forEach(el => {
+    el.addEventListener('input', () => {
+      findGroup(el.dataset.g).images[+el.dataset.i] = el.value;
+      updateHintDisplay();
+    });
+  });
+  groupsContainer.querySelectorAll('.fxInput').forEach(el => {
+    el.addEventListener('input', () => { findGroup(el.dataset.g).popAnimation = el.value; });
+  });
+  groupsContainer.querySelectorAll('.fxDurationInput').forEach(el => {
+    el.addEventListener('input', () => {
+      const v = parseInt(el.value);
+      findGroup(el.dataset.g).popAnimationDuration = isNaN(v) ? 600 : Math.min(5000, Math.max(100, v));
+    });
+  });
+  groupsContainer.querySelectorAll('.soundInput').forEach(el => {
+    el.addEventListener('input', () => { findGroup(el.dataset.g).popSound = el.value; });
+  });
+  groupsContainer.querySelectorAll('.soundVolInput').forEach(el => {
+    el.addEventListener('input', () => {
+      const v = parseInt(el.value);
+      findGroup(el.dataset.g).popSoundVolume = isNaN(v) ? 100 : Math.min(100, Math.max(0, v));
+    });
+  });
+  groupsContainer.querySelectorAll('.addImg').forEach(el => {
+    el.addEventListener('click', () => {
+      findGroup(el.dataset.g).images.push('');
+      renderGroups();
+    });
+  });
+  groupsContainer.querySelectorAll('.removeImg').forEach(el => {
+    el.addEventListener('click', () => {
+      findGroup(el.dataset.g).images.splice(+el.dataset.i, 1);
+      renderGroups();
+    });
+  });
+  groupsContainer.querySelectorAll('.removeGroup').forEach(el => {
+    el.addEventListener('click', () => {
+      settings.groups = settings.groups.filter(g => g.id !== el.dataset.g);
+      renderGroups();
+    });
+  });
+  groupsContainer.querySelectorAll('.testSpawnBtn').forEach(el => {
+    el.addEventListener('click', () => trySpawn(el.dataset.g));
+  });
+  groupsContainer.querySelectorAll('.testPopBtn').forEach(el => {
+    el.addEventListener('click', () => popOne(el.dataset.g));
+  });
+}
+
+document.getElementById('addGroupBtn').addEventListener('click', () => {
+  settings.groups.push(newGroup());
+  renderGroups();
+});
+
 function applySettingsToForm(){
   document.getElementById('channel').value = settings.channel;
-  for (let i = 0; i < 3; i++){
-    document.getElementById('g' + i + 'Command').value = settings.groups[i].command;
-    document.getElementById('g' + i + 'Images').value = settings.groups[i].images.join('\n');
-    document.getElementById('g' + i + 'PopFx').value = settings.groups[i].popAnimation || '';
-    document.getElementById('g' + i + 'PopFxDuration').value = settings.groups[i].popAnimationDuration || 600;
-    document.getElementById('g' + i + 'PopSound').value = settings.groups[i].popSound || '';
-    document.getElementById('g' + i + 'PopSoundVolume').value = settings.groups[i].popSoundVolume != null ? settings.groups[i].popSoundVolume : 100;
-  }
+  renderGroups();
   document.getElementById('minInterval').value = settings.minInterval;
   document.getElementById('maxInterval').value = settings.maxInterval;
   document.getElementById('size').value = settings.size;
@@ -79,18 +202,8 @@ function applySettingsToForm(){
 }
 
 function readSettingsFromForm(){
+  // Groups are already kept in sync live via input listeners in hookGroupInputs.
   settings.channel = document.getElementById('channel').value.trim().replace(/^#/, '');
-  settings.groups = [0, 1, 2].map(i => ({
-    command: (document.getElementById('g' + i + 'Command').value.trim() || ('!group' + (i + 1))),
-    images: document.getElementById('g' + i + 'Images').value.split('\n').map(s => s.trim()).filter(Boolean),
-    popAnimation: document.getElementById('g' + i + 'PopFx').value.trim(),
-    popAnimationDuration: Math.min(5000, Math.max(100, parseInt(document.getElementById('g' + i + 'PopFxDuration').value) || 600)),
-    popSound: document.getElementById('g' + i + 'PopSound').value.trim(),
-    popSoundVolume: (() => {
-      const v = parseInt(document.getElementById('g' + i + 'PopSoundVolume').value);
-      return isNaN(v) ? 100 : Math.min(100, Math.max(0, v));
-    })()
-  }));
   settings.minInterval = Math.max(1, parseFloat(document.getElementById('minInterval').value) || 5);
   settings.maxInterval = Math.max(settings.minInterval, parseFloat(document.getElementById('maxInterval').value) || 15);
   settings.size = Math.min(400, Math.max(16, parseInt(document.getElementById('size').value) || 80));
@@ -119,26 +232,20 @@ async function loadSettings(){
       const loaded = JSON.parse(result.value);
       // Migrate old single-group format if present
       if (loaded.images && loaded.popCommand && !loaded.groups){
-        loaded.groups = [
-          { command: loaded.popCommand, images: loaded.images },
-          { command: '!ghosts', images: [] },
-          { command: '!coins', images: [] }
-        ];
+        loaded.groups = [{ command: loaded.popCommand, images: loaded.images }];
         delete loaded.images;
         delete loaded.popCommand;
       }
       settings = Object.assign({}, settings, loaded);
-      if (!settings.groups || settings.groups.length !== 3){
-        settings.groups = [
-          settings.groups && settings.groups[0] ? settings.groups[0] : { command: '!frogs', images: [] },
-          settings.groups && settings.groups[1] ? settings.groups[1] : { command: '!ghosts', images: [] },
-          settings.groups && settings.groups[2] ? settings.groups[2] : { command: '!coins', images: [] }
-        ];
+      if (!settings.groups || !settings.groups.length){
+        settings.groups = [newGroup()];
       }
-      // Backfill popAnimation/popSound fields for settings saved before these features existed
-      settings.groups = settings.groups.map(g => Object.assign({
-        popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100
-      }, g));
+      // Backfill fields for settings saved before dynamic groups / popAnimation / popSound existed
+      settings.groups = settings.groups.map(g => Object.assign(
+        { id: crypto.randomUUID(), popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 },
+        g,
+        { images: (g.images && g.images.length) ? g.images : [''] }
+      ));
     }
   }catch(e){
     // no saved settings yet, that's fine
@@ -157,23 +264,24 @@ function scheduleSpawn(){
   }, delay);
 }
 
-function trySpawn(forcedGroupIndex){
+function trySpawn(forcedGroupId){
   if (activeImages.length >= settings.maxImages) return;
 
-  let groupIndex = forcedGroupIndex;
-  if (groupIndex === undefined){
-    const eligible = settings.groups
-      .map((g, i) => i)
-      .filter(i => settings.groups[i].images.length);
+  let group;
+  if (forcedGroupId !== undefined){
+    group = findGroup(forcedGroupId);
+    if (!group) return;
+  } else {
+    const eligible = settings.groups.filter(g => g.images.some(l => l.trim()));
     if (!eligible.length) return;
-    groupIndex = eligible[Math.floor(Math.random() * eligible.length)];
+    group = eligible[Math.floor(Math.random() * eligible.length)];
   }
 
-  const group = settings.groups[groupIndex];
-  if (!group || !group.images.length) return;
-
-  const parsedImages = group.images.map(parseImageLine);
+  const parsedImages = group.images.filter(l => l.trim()).map(parseImageLine);
+  if (!parsedImages.length) return;
   const url = pickWeighted(parsedImages).url;
+  if (!url) return;
+
   const size = settings.size;
   const maxX = Math.max(0, window.innerWidth - size);
   const bottomMargin = 8; // gap between image bottom and viewport edge
@@ -191,7 +299,7 @@ function trySpawn(forcedGroupIndex){
   requestAnimationFrame(() => requestAnimationFrame(() => img.classList.add('in')));
 
   const id = crypto.randomUUID();
-  activeImages.push({ id, el: img, x, y, size, groupIndex, imageId: imageIdFromUrl(url) });
+  activeImages.push({ id, el: img, x, y, size, groupId: group.id, imageId: imageIdFromUrl(url) });
 }
 
 // Parses an image line, which may optionally end in "|weight" to control spawn rarity.
@@ -257,9 +365,9 @@ function burstAt(x, y, color){
   setTimeout(() => burst.remove(), 550);
 }
 
-// Plays the pop effect for a given target: a group's custom GIF if set, otherwise the default particle burst.
+// Plays the pop effect for a given target: its group's custom GIF/sound if set, otherwise the default particle burst.
 function playPopFx(target){
-  const group = settings.groups[target.groupIndex];
+  const group = findGroup(target.groupId);
   const cx = target.x + target.size / 2;
   const cy = target.y + target.size / 2;
 
@@ -281,17 +389,16 @@ function playPopFx(target){
     setTimeout(() => fx.classList.add('fading'), Math.max(0, duration - 200));
     setTimeout(() => fx.remove(), duration);
   } else {
-    const color = getComputedStyle(document.documentElement).getPropertyValue(
-      ['--g0', '--g1', '--g2'][target.groupIndex] || '--blue-bright'
-    );
+    const gi = settings.groups.findIndex(g => g.id === target.groupId);
+    const color = gi !== -1 ? groupColor(gi) : '#89CFF0';
     burstAt(cx, cy, color);
   }
 }
 
-function popOne(groupIndex, popper){
-  const pool = groupIndex === undefined
+function popOne(groupId, popper){
+  const pool = groupId === undefined
     ? activeImages
-    : activeImages.filter(i => i.groupIndex === groupIndex);
+    : activeImages.filter(i => i.groupId === groupId);
   if (!pool.length) return;
 
   let target;
@@ -315,9 +422,9 @@ function popOne(groupIndex, popper){
 
 function handleChatMessage(text, popper){
   const trimmed = text.trim().toLowerCase();
-  const groupIndex = settings.groups.findIndex(g => g.command.trim().toLowerCase() === trimmed);
-  if (groupIndex !== -1){
-    popOne(groupIndex, popper);
+  const group = settings.groups.find(g => g.command.trim().toLowerCase() === trimmed && trimmed !== '');
+  if (group){
+    popOne(group.id, popper);
   }
 }
 
@@ -436,6 +543,7 @@ function disconnectStreamerbot(){
 function reportPopToStreamerbot(target, popper){
   if (!settings.streamerbot.enabled) return;
   if (!sbWs || sbWs.readyState !== WebSocket.OPEN) return;
+  const group = findGroup(target.groupId);
   sbWs.send(JSON.stringify({
     request: 'DoAction',
     action: { name: settings.streamerbot.actionName },
@@ -443,8 +551,8 @@ function reportPopToStreamerbot(target, popper){
       userId: popper.userId,
       userName: popper.userName,
       imageId: target.imageId,
-      group: settings.groups[target.groupIndex] ? settings.groups[target.groupIndex].command : '',
-      groupIndex: target.groupIndex
+      group: group ? group.command : '',
+      groupId: target.groupId
     },
     id: crypto.randomUUID()
   }));
@@ -482,9 +590,6 @@ document.getElementById('disconnect').addEventListener('click', () => {
   disconnectTwitch();
   disconnectStreamerbot();
 });
-document.getElementById('testSpawn0').addEventListener('click', () => { readSettingsFromForm(); trySpawn(0); });
-document.getElementById('testSpawn1').addEventListener('click', () => { readSettingsFromForm(); trySpawn(1); });
-document.getElementById('testSpawn2').addEventListener('click', () => { readSettingsFromForm(); trySpawn(2); });
 
 // ---------- Init ----------
 
