@@ -146,7 +146,7 @@ async function loadSettings(){
   applySettingsToForm();
 }
 
-// Spawning
+// ---------- Spawning ----------
 
 function scheduleSpawn(){
   clearTimeout(spawnTimer);
@@ -282,7 +282,7 @@ function playPopFx(target){
     setTimeout(() => fx.remove(), duration);
   } else {
     const color = getComputedStyle(document.documentElement).getPropertyValue(
-      ['--g0', '--g1', '--g2'][target.groupIndex] || '--purple-bright'
+      ['--g0', '--g1', '--g2'][target.groupIndex] || '--blue-bright'
     );
     burstAt(cx, cy, color);
   }
@@ -311,7 +311,7 @@ function popOne(groupIndex, popper){
   }
 }
 
-// Twitch chat (anonymous IRC over WebSocket)
+// ---------- Twitch chat (anonymous IRC over WebSocket) ----------
 
 function handleChatMessage(text, popper){
   const trimmed = text.trim().toLowerCase();
@@ -401,7 +401,7 @@ function disconnectTwitch(){
   setStatus('', 'Not connected');
 }
 
-// Streamer.bot WebSocket client
+// ---------- Streamer.bot WebSocket client ----------
 
 const sbStatusEl = document.getElementById('sbStatus');
 
@@ -432,7 +432,7 @@ function disconnectStreamerbot(){
   setSbStatus('Not connected');
 }
 
-// Sends a DoAction request to Streamer.bot with details of user X popping image Y
+// Sends a DoAction request to Streamer.bot with details of who popped which image.
 function reportPopToStreamerbot(target, popper){
   if (!settings.streamerbot.enabled) return;
   if (!sbWs || sbWs.readyState !== WebSocket.OPEN) return;
@@ -450,7 +450,7 @@ function reportPopToStreamerbot(target, popper){
   }));
 }
 
-// Panel toggling
+// ---------- Panel toggling ----------
 
 function togglePanel(force){
   const open = typeof force === 'boolean' ? force : !panel.classList.contains('open');
@@ -486,7 +486,7 @@ document.getElementById('testSpawn0').addEventListener('click', () => { readSett
 document.getElementById('testSpawn1').addEventListener('click', () => { readSettingsFromForm(); trySpawn(1); });
 document.getElementById('testSpawn2').addEventListener('click', () => { readSettingsFromForm(); trySpawn(2); });
 
-// Init
+// ---------- Init ----------
 
 (async function init(){
   await loadSettings();

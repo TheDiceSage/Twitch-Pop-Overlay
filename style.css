@@ -1,17 +1,17 @@
-  :root{
-    --purple: #9146FF;
-    --purple-bright: #b073ff;
-    --ink: #0e0b16;
-    --panel: rgba(16, 12, 26, 0.86);
-    --panel-border: rgba(145, 70, 255, 0.35);
-    --text: #ece7f7;
-    --text-dim: #a99fc2;
+:root{
+    --blue: #89CFF0;
+    --blue-bright: #B8E6FB;
+    --ink: #14161c;
+    --panel: rgba(18, 20, 26, 0.88);
+    --panel-border: rgba(137, 207, 240, 0.35);
+    --text: #eceef2;
+    --text-dim: #9aa0aa;
     --green: #3ddc84;
     --red: #ff5470;
     --amber: #ffb454;
-    --g0: #9146FF;
-    --g1: #2dd4bf;
-    --g2: #ff9f4a;
+    --g0: #89CFF0;
+    --g1: #9aa0aa;
+    --g2: #5b7c8f;
   }
   html, body{
     margin:0; padding:0; width:100%; height:100%;
@@ -44,8 +44,8 @@
   }
   .burst span{
     position:absolute; left:50%; top:50%;
-    width:6px; height:6px; border-radius:50%;
-    background: var(--purple-bright);
+    width:6px; height:6px; border-radius:0;
+    background: var(--blue-bright);
     transform: translate(-50%,-50%);
     animation: burstfly 0.5s ease-out forwards;
   }
@@ -74,10 +74,10 @@
   .hint{
     position:fixed;
     left:50%; bottom:22px; transform:translateX(-50%);
-    background: rgba(14,11,22,0.55);
+    background: rgba(14,15,20,0.55);
     border:1px solid var(--panel-border);
     padding:6px 14px;
-    border-radius:999px;
+    border-radius:0;
     font-size:13px;
     color: var(--text-dim);
     font-family:'JetBrains Mono', monospace;
@@ -91,7 +91,7 @@
   #gear{
     position:fixed; right:14px; bottom:14px;
     width:30px; height:30px;
-    border-radius:50%;
+    border-radius:0;
     border:none;
     background: var(--panel);
     color: var(--text-dim);
@@ -110,7 +110,7 @@
     overflow-y:auto;
     background: var(--panel);
     border:1px solid var(--panel-border);
-    border-radius:14px;
+    border-radius:0;
     padding:16px 16px 18px;
     backdrop-filter: blur(10px);
     box-shadow: 0 12px 40px rgba(0,0,0,0.5);
@@ -123,7 +123,7 @@
     font-size:15px; margin:0 0 2px;
     display:flex; align-items:center; gap:8px;
   }
-  #panel h1 .dot{ color: var(--purple-bright); }
+  #panel h1 .dot{ color: var(--blue-bright); }
   #panel .sub{ font-size:11.5px; color:var(--text-dim); margin:0 0 14px; }
 
   .status{
@@ -133,9 +133,9 @@
     margin-bottom:14px;
     padding:7px 10px;
     background: rgba(255,255,255,0.04);
-    border-radius:8px;
+    border-radius:0;
   }
-  .status .led{ width:8px; height:8px; border-radius:50%; background: var(--text-dim); flex-shrink:0; }
+  .status .led{ width:8px; height:8px; border-radius:0; background: var(--text-dim); flex-shrink:0; }
   .status.connected .led{ background: var(--green); box-shadow:0 0 8px var(--green); }
   .status.connecting .led{ background: var(--amber); box-shadow:0 0 8px var(--amber); animation: blink 1s infinite; }
   .status.error .led{ background: var(--red); box-shadow:0 0 8px var(--red); }
@@ -151,13 +151,13 @@
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.09);
     color: var(--text);
-    border-radius:7px;
+    border-radius:0;
     padding:8px 9px;
     font-family:'JetBrains Mono', monospace;
     font-size:12.5px;
     outline:none;
   }
-  input:focus, textarea:focus, select:focus{ border-color: var(--purple); }
+  input:focus, textarea:focus, select:focus{ border-color: var(--blue); }
   textarea{ resize:vertical; min-height:52px; line-height:1.5; }
   .row{ display:flex; gap:8px; }
   .row > div{ flex:1; }
@@ -168,7 +168,7 @@
   .group{
     margin-top:16px;
     padding:10px 12px 12px;
-    border-radius:9px;
+    border-radius:0;
     background: rgba(255,255,255,0.035);
     border-left: 3px solid var(--g);
   }
@@ -178,19 +178,19 @@
     display:flex; align-items:center; gap:6px;
     margin-bottom:8px;
   }
-  .group .grouptitle .swatch{ width:8px; height:8px; border-radius:50%; background:var(--g); }
+  .group .grouptitle .swatch{ width:8px; height:8px; border-radius:0; background:var(--g); }
   .group label{ margin-top:8px; }
   .group label:first-of-type{ margin-top:0; }
 
   .btnrow{ display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
   button.action{
     flex:1; min-width: 90px;
-    background: var(--purple);
-    border:none; color:white; font-weight:600;
-    padding:9px 10px; border-radius:8px; cursor:pointer;
+    background: var(--blue);
+    border:none; color:#0e1116; font-weight:600;
+    padding:9px 10px; border-radius:0; cursor:pointer;
     font-family:'Space Grotesk', sans-serif; font-size:12.5px;
   }
-  button.action:hover{ background: var(--purple-bright); }
+  button.action:hover{ background: var(--blue-bright); }
   button.ghost{
     background: rgba(255,255,255,0.06); color: var(--text);
   }
