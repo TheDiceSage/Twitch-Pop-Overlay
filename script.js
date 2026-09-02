@@ -1,4 +1,3 @@
-const STORAGE_KEY = 'twitch-pop-overlay-settings';
 const stage = document.getElementById('stage');
 const panel = document.getElementById('panel');
 const gear = document.getElementById('gear');
@@ -22,7 +21,7 @@ function newGroup(){
   };
 }
 
-let settings = {
+const DEFAULT_SETTINGS = {
   channel: '',
   groups: [newGroup()],
   minInterval: 5,
@@ -38,6 +37,8 @@ let settings = {
     actionName: 'ImagePop'
   }
 };
+
+let settings = Object.assign({}, DEFAULT_SETTINGS, window.OVERLAY_SETTINGS || {});
 
 let activeImages = []; // { id, el, x, y, size, groupId, imageId }
 let ws = null;
@@ -219,38 +220,35 @@ function readSettingsFromForm(){
   updateHintDisplay();
 }
 
-async function saveSettings(){
-  try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(settings), false);
-  }catch(e){ console.error('Failed to save settings', e); }
-}
-
 async function loadSettings(){
   try{
-    const result = await window.storage.get(STORAGE_KEY, false);
-    if (result && result.value){
-      const loaded = JSON.parse(result.value);
-      // Migrate old single-group format if present
-      if (loaded.images && loaded.popCommand && !loaded.groups){
-        loaded.groups = [{ command: loaded.popCommand, images: loaded.images }];
-        delete loaded.images;
-        delete loaded.popCommand;
-      }
+    const response = await fetch('/api/settings', { cache: 'no-store' });
+    if (response.ok){
+      const loaded = await response.json();
       settings = Object.assign({}, settings, loaded);
-      if (!settings.groups || !settings.groups.length){
-        settings.groups = [newGroup()];
-      }
-      // Backfill fields for settings saved before dynamic groups / popAnimation / popSound existed
-      settings.groups = settings.groups.map(g => Object.assign(
-        { id: crypto.randomUUID(), popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 },
-        g,
-        { images: (g.images && g.images.length) ? g.images : [''] }
-      ));
     }
   }catch(e){
-    // no saved settings yet, that's fine
+    // Fall back to settings.js when the local server is unavailable.
   }
+  if (!settings.groups || !settings.groups.length){
+    settings.groups = [newGroup()];
+  }
+  settings.streamerbot = Object.assign({}, DEFAULT_SETTINGS.streamerbot, settings.streamerbot || {});
+  settings.groups = settings.groups.map(g => Object.assign(
+    { id: crypto.randomUUID(), popAnimation: '', popAnimationDuration: 600, popSound: '', popSoundVolume: 100 },
+    g,
+    { images: (g.images && g.images.length) ? g.images : [''] }
+  ));
   applySettingsToForm();
+}
+
+async function saveSettings(){
+  const response = await fetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings)
+  });
+  if (!response.ok) throw new Error('Settings server returned ' + response.status);
 }
 
 // ---------- Spawning ----------
@@ -290,6 +288,11 @@ function trySpawn(forcedGroupId){
 
   const img = document.createElement('img');
   img.src = url;
+  img.referrerPolicy = 'no-referrer';
+  img.addEventListener('error', () => {
+    console.error('Image failed to load:', url, 'The image host may block cross-origin embedding.');
+    img.remove();
+  }, { once: true });
   img.className = 'critter';
   img.style.width = size + 'px';
   img.style.height = size + 'px';
@@ -577,7 +580,11 @@ document.addEventListener('keydown', (e) => {
 
 document.getElementById('saveConnect').addEventListener('click', async () => {
   readSettingsFromForm();
-  await saveSettings();
+  try{
+    await saveSettings();
+  }catch(e){
+    console.error('Failed to save settings:', e);
+  }
   connectTwitch();
   if (settings.streamerbot.enabled){
     connectStreamerbot();

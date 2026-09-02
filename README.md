@@ -5,19 +5,22 @@ An OBS browser source overlay that connects to a Twitch channel's chat, spawns s
 
 ## Files
 
-You need all three of these **in the same folder**:
+You need all four of these **in the same folder**, plus `server.py` to save settings from the page:
 
-- `twitch-pop-overlay.html`
+- `index.html`
 - `style.css`
+- `settings.js`
 - `script.js`
+- `server.py`
 
 ## Quick start
 
-1. Download all three files into one folder (don't rename, don't separate).
-2. In OBS, add a **Browser Source**.
-3. Check the box for **Local file** and pick the `index.html` in your folder.
-4. Set the width/height to match your canvas (e.g. 1920x1080 or leave default and resize the source).
-5. In the source's preview (or by opening the HTML file directly in a normal browser), press **S** or click the small gear icon in the bottom-right corner to open Settings.
+1. Put all files into one folder (don't rename, don't separate).
+2. Start the local server from that folder: `py server.py`
+3. Open `http://127.0.0.1:8765` in your browser, or use that URL as the OBS Browser Source URL.
+4. In OBS, add a **Browser Source** using the URL above and leave **Local file** unchecked.
+5. Set the width/height to match your canvas (e.g. 1920x1080 or leave default and resize the source).
+6. In the page or OBS preview, press **S** or click the small gear icon in the bottom-right corner to open Settings.
 
 ## Configuring
 
@@ -35,9 +38,9 @@ Open the settings panel (press **S**) and fill in:
 - **Pop order** - which image gets removed first when a command matches: oldest or random.
 - **Show command hint** - displays a small on-screen reminder of the active commands.
 
-Click **Save & Connect**. Use **Test G1/G2/G3** to preview each group without needing live chat.
+Open the settings panel and click **Save & Connect**. The local server writes the values directly to `settings.js`, and they reload automatically next time. Use the per-group **Test Spawn** / **Test Pop** buttons to preview each group without needing live chat.
 
-Once configured, close the panel by pressing **S** again. It's invisible to your stream when closed, so this same file is safe to use directly as your OBS source going forward. Settings are saved automatically and reload with the page.
+Once configured, close the panel by pressing **S** again. It's invisible to your stream when closed.
 
 ## Optional: Streamer.bot integration
 
@@ -73,7 +76,7 @@ public class CPHInline
 
 ## Troubleshooting
 
-- **Images never appear**: make sure at least one group has image URLs saved, and that you hit Save & Connect.
+- **Images never appear**: make sure at least one group has image URLs configured, and that you hit Save & Connect.
 - **Commands don't pop anything**: command matching is exact — `!pop` won't match `!pop please`. Check the status indicator in the panel shows "Connected to #yourchannel".
 - **Streamer.bot not receiving events**: check the small status line under the Streamer.bot section of the panel, and confirm the Action name matches exactly (case-sensitive).
 - **Settings panel shows on stream**: make sure it's closed by pressing S before adding/using the source in OBS — the gear icon is intentionally small and low-opacity, but you can crop it out in OBS or change opacity to zero if you'd like it fully gone.
